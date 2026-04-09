@@ -1,0 +1,141 @@
+generator client {
+  provider = "prisma-client-js"
+ 
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Users {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(150)
+  email      String   @unique @db.VarChar(255)
+  password   String   @db.VarChar(255)
+  role       String   @default("VIEWER") @db.VarChar(30)
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  // Relations
+  prompts          Prompts[]         @relation("UserPrompts")
+  created_versions Prompt_versions[]
+}
+
+model Categories {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique @db.VarChar(100)
+  color      String?  @db.VarChar(30)
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  // Relations
+  prompts Prompts[]
+}
+
+model Prompts {
+  id                 Int       @id @default(autoincrement())
+  title              String    @db.VarChar(255)
+  slug               String    @unique @db.VarChar(255)
+  description        String?   @db.Text
+  status             String    @default("DRAFT") @db.VarChar(30)
+  visibility         String    @default("PRIVATE") @db.VarChar(30)
+  latest_version_no  Int       @default(1)
+  recommended_model  String?   @db.VarChar(100)
+  is_template_active Boolean   @default(true)
+  created_at         DateTime  @default(now()) @db.Timestamptz
+  updated_at         DateTime  @default(now()) @updatedAt @db.Timestamptz
+  deleted_at         DateTime? @db.Timestamptz
+
+  // FK Fields
+  category_id Int?
+  owner_id    Int
+
+  // Relations
+  category  Categories?        @relation(fields: [category_id], references: [id])
+  owner     Users              @relation("UserPrompts", fields: [owner_id], references: [id])
+  versions  Prompt_versions[]
+  variables Prompt_variables[]
+  tags      Prompt_tags[]
+}
+
+model Tags {
+  id         Int      @id @default(autoincrement())
+  name       String   @unique @db.VarChar(100)
+  created_at DateTime @default(now()) @db.Timestamptz
+
+  // Relations
+  prompts Prompt_tags[]
+}
+
+model Prompt_versions {
+  id               Int      @id @default(autoincrement())
+  version_no       Int
+  template_content String   @db.Text
+  system_prompt    String?  @db.Text
+  output_format    String?  @db.Text
+  changelog        String?  @db.Text
+  created_at       DateTime @default(now()) @db.Timestamptz
+  status           String   @default("DRAFT") @db.VarChar(30)
+
+  // FK Fields
+  prompt_id  Int
+  created_by Int
+
+  // Relations
+  prompt          Prompts            @relation(fields: [prompt_id], references: [id], onDelete: Cascade)
+  creator         Users              @relation(fields: [created_by], references: [id])
+  promptVariables Prompt_variables[]
+
+  @@unique([prompt_id, version_no], name: "uq_prompt_versions")
+}
+
+model Prompt_variables {
+  id            Int      @id @default(autoincrement())
+  name          String   @db.VarChar(100)
+  label         String   @db.VarChar(150)
+  type          String   @db.VarChar(30)
+  is_required   Boolean  @default(false)
+  default_value String?  @db.Text
+  placeholder   String?  @db.Text
+  description   String?  @db.Text
+  options_json  Json?
+  sort_order    Int      @default(0)
+  created_at    DateTime @default(now()) @db.Timestamptz
+  updated_at    DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  // FK Field
+  prompt_id         Int
+  prompt_version_id Int?
+
+  // Relation
+  prompt         Prompts          @relation(fields: [prompt_id], references: [id], onDelete: Cascade)
+  prompt_version Prompt_versions? @relation(fields: [prompt_version_id], references: [id])
+
+  @@unique([prompt_id, name], name: "uq_prompt_variable_name")
+}
+
+model Prompt_tags {
+  prompt_id Int
+  tag_id    Int
+
+  // Relations
+  prompt Prompts @relation(fields: [prompt_id], references: [id], onDelete: Cascade)
+  tag    Tags    @relation(fields: [tag_id], references: [id], onDelete: Cascade)
+
+  @@id([prompt_id, tag_id]) // Composite Primary Key
+}
+
+enum Role {
+  VIEWER
+  EDITOR
+  ADMIN
+}
+
+enum Status {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+  REJECTED
+  REVIEW
+}
