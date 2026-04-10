@@ -19,7 +19,11 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": ["./*"],
+      "@components/*": ["./src/components/*"],
+      "@lib/*": ["./src/lib/*"],
+      "@app/*": ["./src/app/*"],
+      "@prisma/*": ["./prisma/*"]
     }
   },
   "include": [

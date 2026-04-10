@@ -36,7 +36,7 @@ model Categories {
 model Prompts {
   id                 Int       @id @default(autoincrement())
   title              String    @db.VarChar(255)
-  slug               String    @unique @db.VarChar(255)
+  // slug               String?   @unique @db.VarChar(255)
   description        String?   @db.Text
   status             String    @default("DRAFT") @db.VarChar(30)
   visibility         String    @default("PRIVATE") @db.VarChar(30)
