@@ -1,10 +1,7 @@
-import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
-import { Users} from "@prisma/client";
 import { z } from "zod";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 
 const SignUpSchema = z.object({
