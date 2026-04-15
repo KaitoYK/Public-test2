@@ -111,13 +111,12 @@ export default function EditPromptPage() {
 
   // Detect variables from template {{var_name}}
   useEffect(() => {
-    if (loadingContext) return; // Don't run this initially while fetching to avoid overwriting API data with empty defaults
+    if (loadingContext) return;
 
     const rawMatches = Array.from(templateContent.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g));
     const detectedNames = Array.from(new Set(rawMatches.map(m => m[1])));
 
     setVariables(prev => {
-      // Keep existing configs, add new ones automatically
       const nextVars = detectedNames.map(name => {
         const existing = prev.find(v => v.name === name);
         if (existing) return existing;
@@ -130,7 +129,6 @@ export default function EditPromptPage() {
   const updateVariable = (name: string, field: keyof VariableConfig, value: string) => {
     setVariables(prev => prev.map(v => v.name === name ? { ...v, [field]: value } : v));
   };
-
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && tagInput.trim() !== "") {

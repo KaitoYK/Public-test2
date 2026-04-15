@@ -1,23 +1,45 @@
-import { getServerAuthSession } from "@/lib/auth";
-import { redirect } from "next/navigation";
+"use client";
+
+import { usePathname } from "next/navigation";
 import { SidebarProvider, SidebarTrigger } from "@/component/ui/sidebar";
 import { AppSidebar } from "@/component/AppSidebar";
 import { HeaderActions } from "@/component/HeaderActions";
+import { useSession } from "next-auth/react";
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 
-export default async function AppLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const session = await getServerAuthSession();
+/** Routes that should NOT have the sidebar/header shell */
+const PUBLIC_ROUTES = ["/login", "/signup"];
 
-  if (!session?.user) {
-    redirect("/login");
+export function AppShell({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
+
+  if (isPublic) {
+    return <>{children}</>;
+  }
+
+  return <ProtectedShell>{children}</ProtectedShell>;
+}
+
+function ProtectedShell({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (status === "unauthenticated") {
+      router.replace("/login");
+    }
+  }, [status, router]);
+
+  // While loading session, render nothing (avoids flash)
+  if (status === "loading" || !session?.user) {
+    return null;
   }
 
   return (
     <SidebarProvider>
-      {/* ─── Full-width sticky header (z-30, above sidebar z-10) ─── */}
+      {/* ─── Full-width sticky header ─── */}
       <header className="fixed top-0 left-0 right-0 z-30 flex h-14 shrink-0 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
         <div className="flex items-center gap-2">
           <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
@@ -34,10 +56,10 @@ export default async function AppLayout({
         </div>
       </header>
 
-      {/* ─── Sidebar starts at top-14 (see sidebar.tsx fix) ─── */}
+      {/* ─── Sidebar ─── */}
       <AppSidebar user={session.user} />
 
-      {/* ─── Main content: offset by header height + sidebar spacer ─── */}
+      {/* ─── Main content offset by header ─── */}
       <div className="flex flex-1 flex-col min-w-0 pt-14 min-h-screen">
         <main className="flex-1 overflow-auto">
           <div className="mx-auto max-w-6xl w-full p-4 md:p-6 lg:p-8">

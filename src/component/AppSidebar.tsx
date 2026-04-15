@@ -7,7 +7,8 @@ import {
   FileText, 
   FolderOpen, 
   Settings,
-  PlayCircle 
+  PlayCircle,
+  Sparkles
 } from "lucide-react";
 
 import {
@@ -20,6 +21,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarFooter,
+  SidebarHeader,
   useSidebar,
 } from "@/component/ui/sidebar";
 import { Avatar, AvatarFallback } from "@/component/ui/avatar";
@@ -38,7 +40,21 @@ export function AppSidebar({ user }: { user: { email?: string | null; name?: str
   const collapsed = state === "collapsed";
 
   return (
-    <Sidebar collapsible="icon">
+    <Sidebar collapsible="icon" className="border-r-0">
+      <SidebarHeader className="h-14 flex items-center border-b border-sidebar-border px-4 py-2">
+        <div className="flex w-full items-center gap-3 overflow-hidden">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary text-primary-foreground">
+            <Sparkles className="h-5 w-5" />
+          </div>
+          {!collapsed && (
+            <div className="flex flex-col truncate">
+              <span className="truncate font-bold tracking-tight text-sidebar-foreground">PromptHub</span>
+              <span className="truncate text-[10px] text-sidebar-muted-foreground/70">Internal Prompt Library</span>
+            </div>
+          )}
+        </div>
+      </SidebarHeader>
+
       {/* Navigation */}
       <SidebarContent>
         <SidebarGroup>
