@@ -13,14 +13,18 @@ export async function DELETE(request: Request, { params }: RouteContext) {
         }
 
         const { id } = await params;
-        const favoriteId = Number(id);
+        const promptId = Number(id); // id ที่รับมาจริงๆ คือ prompt_id
 
-        if (isNaN(favoriteId)) {
-            return NextResponse.json({ error: "Invalid favorite ID" }, { status: 400 });
+        if (isNaN(promptId)) {
+            return NextResponse.json({ error: "Invalid prompt ID" }, { status: 400 });
         }
 
-        await prisma.favorites.delete({
-            where: { id: favoriteId },
+        // ลบโดยใช้ unique key (user_id + prompt_id) แทน favorites.id
+        await prisma.favorites.deleteMany({
+            where: {
+                user_id: Number(session.user.id),
+                prompt_id: promptId,
+            },
         });
 
         return NextResponse.json({ message: "Favorite deleted successfully" });
