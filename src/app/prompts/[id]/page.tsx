@@ -10,6 +10,8 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/component/ui/card";
 import { Button } from "@/component/ui/button";
 import { Badge } from "@/component/ui/badge";
 import { Skeleton } from "@/component/ui/skeleton";
+import { useFavorites } from "@/hooks/useFavorite";
+import { FaHeart, FaRegHeart } from "react-icons/fa6";
 
 type Version = {
   id: number;
@@ -41,6 +43,7 @@ type PromptDetail = {
 export default function PromptDetailPage() {
   const { id } = useParams();
 
+  const {toggleFavorite, isFavorite} = useFavorites();
   const [prompt, setPrompt] = useState<PromptDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -126,6 +129,11 @@ export default function PromptDetailPage() {
           )}
         </div>
         <div className="flex gap-3 shrink-0">
+          <Button variant="outline" size="sm" onClick={() => toggleFavorite(prompt.id)}
+            style={{ backgroundColor: isFavorite(prompt.id) ? 'orange' : '', color: 'white' }}>
+            {isFavorite(prompt.id) ? <FaHeart /> : <FaRegHeart />}
+            {isFavorite(prompt.id) ? "Unfavorite" : "Favorite"}
+          </Button>
           <Button variant="outline" size="sm" asChild>
             <Link href="#">Use Prompt</Link>
           </Button>
