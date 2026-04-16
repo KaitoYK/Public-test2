@@ -1,15 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
-import { 
-  Copy, 
-  Check
-} from "lucide-react";
+import { Copy, Check, Clock, ChevronDown } from "lucide-react";
 
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/component/ui/card";
+import { Card, CardHeader, CardTitle, CardContent } from "@/component/ui/card";
 import { Button } from "@/component/ui/button";
 import { Badge } from "@/component/ui/badge";
 import { Skeleton } from "@/component/ui/skeleton";
@@ -43,55 +40,60 @@ type PromptDetail = {
 
 export default function PromptDetailPage() {
   const { id } = useParams();
-  const router = useRouter();
-  
+
   const [prompt, setPrompt] = useState<PromptDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
+  const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
-    
     axios.get<PromptDetail>(`/api/prompts/${id}`)
-      .then(res => setPrompt(res.data))
+      .then(res => {
+        setPrompt(res.data);
+        // default to latest version
+        if (res.data.versions.length > 0) {
+          setSelectedVersionId(res.data.versions[0].id);
+        }
+      })
       .catch(err => setError(err.response?.data?.error || "Failed to load prompt details"))
       .finally(() => setLoading(false));
   }, [id]);
 
+  const selectedVersion = prompt?.versions.find(v => v.id === selectedVersionId) ?? prompt?.versions[0];
+
   const copyToClipboard = () => {
-    if (!prompt?.versions[0]?.template_content) return;
-    navigator.clipboard.writeText(prompt.versions[0].template_content);
+    if (!selectedVersion?.template_content) return;
+    navigator.clipboard.writeText(selectedVersion.template_content);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
   const getStatusBadge = (status: string) => {
     switch (status) {
-      case "PUBLISHED": return <Badge variant="success">Published</Badge>;
-      case "DRAFT": return <Badge variant="secondary">Draft</Badge>;
-      case "REVIEW": return <Badge variant="warning">Review</Badge>;
-      case "ARCHIVED": return <Badge variant="outline">Archived</Badge>;
-      default: return <Badge>{status}</Badge>;
+      case "PUBLISHED": return <Badge variant="success">Approved</Badge>;
+      case "DRAFT":     return <Badge variant="secondary">Draft</Badge>;
+      case "REVIEW":    return <Badge variant="warning">Review</Badge>;
+      case "ARCHIVED":  return <Badge variant="outline">Archived</Badge>;
+      default:          return <Badge>{status}</Badge>;
     }
   };
 
   if (loading) {
     return (
-      <div className="container mx-auto px-4 py-8 max-w-5xl space-y-6">
-        <Skeleton className="h-8 w-24 mb-6" />
+      <div className="max-w-5xl space-y-6 py-8">
+        <Skeleton className="h-8 w-24" />
         <Skeleton className="h-12 w-3/4" />
         <Skeleton className="h-6 w-1/2" />
-        <div className="pt-8">
-          <Skeleton className="h-64 w-full" />
-        </div>
+        <Skeleton className="h-64 w-full" />
       </div>
     );
   }
 
   if (error || !prompt) {
     return (
-      <div className="container mx-auto px-4 py-20 text-center max-w-lg">
+      <div className="py-20 text-center max-w-lg mx-auto">
         <div className="bg-destructive/10 text-destructive p-6 rounded-lg mb-6">
           <h2 className="text-xl font-bold mb-2">ไม่พบข้อมูล Prompt</h2>
           <p>{error}</p>
@@ -101,123 +103,242 @@ export default function PromptDetailPage() {
     );
   }
 
-  const latestVersion = prompt.versions[0];
-
   return (
-    <div className="min-h-screen bg-background text-foreground pb-20">
-
-      <main className="py-4">
-        {/* Header Section */}
-        <div className="flex items-start justify-between mb-8">
-          <div>
-            <h1 className="text-2xl font-bold tracking-tight mb-2">{prompt.title}</h1>
-            <p className="text-sm text-muted-foreground">
-              {prompt.description || "ไม่มีรายละเอียดระบุไว้"}
-            </p>
+    <div className="pb-20">
+      {/* Header */}
+      <div className="flex items-start justify-between mb-8">
+        <div>
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-2xl font-bold tracking-tight">{prompt.title}</h1>
+            {getStatusBadge(prompt.status)}
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" size="sm" asChild>
-              <Link href="#">Use Prompt</Link>
-            </Button>
-            <Button size="sm" asChild>
-              <Link href={`/prompts/${id}/edit`}>Edit</Link>
-            </Button>
-          </div>
+          <p className="text-sm text-muted-foreground">
+            {prompt.description || "ไม่มีรายละเอียดระบุไว้"}
+          </p>
+          {prompt.tags.length > 0 && (
+            <div className="flex flex-wrap gap-1.5 mt-3">
+              {prompt.tags.map(t => (
+                <span key={t.id} className="text-xs bg-muted px-2.5 py-1 rounded-full text-muted-foreground">
+                  #{t.name}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
+        <div className="flex gap-3 shrink-0">
+          <Button variant="outline" size="sm" asChild>
+            <Link href="#">Use Prompt</Link>
+          </Button>
+          <Button size="sm" asChild>
+            <Link href={`/prompts/${id}/edit`}>Edit</Link>
+          </Button>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          
-          {/* Main Content Area - Left Column */}
-          <div className="lg:col-span-2 space-y-6">
-            
-            <Card className="border-border shadow-sm overflow-hidden">
-              <CardHeader className="bg-background pb-2">
-                <CardTitle className="text-base font-semibold">Template</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <div className="bg-secondary relative p-4 rounded-md border text-sm font-mono whitespace-pre-wrap text-foreground">
-                  {latestVersion?.template_content || "No content"}
-                  <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6 text-muted-foreground hover:text-foreground" onClick={copyToClipboard} title="Copy">
-                    {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
 
-            <Card className="border-border shadow-sm">
-              <CardHeader className="bg-background pt-4 pb-2">
-                <CardTitle className="text-base font-semibold">Examples</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <div className="text-sm text-muted-foreground p-2">
-                  sample input / output จะแสดงตรงนี้
-                </div>
-              </CardContent>
-            </Card>
+        {/* ─── Left: Template + Version History ─── */}
+        <div className="lg:col-span-2 space-y-6">
 
-            <Card className="border-border shadow-sm">
-              <CardHeader className="bg-background pt-4 pb-2">
-                <CardTitle className="text-base font-semibold">Version History</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-2">
-                <div className="text-sm text-muted-foreground p-2">
-                  v1, v2, v3...
-                </div>
-              </CardContent>
-            </Card>
+          {/* Version Selector bar */}
+          {prompt.versions.length > 1 && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-muted-foreground font-medium">Version:</span>
+              {prompt.versions.map(v => (
+                <button
+                  key={v.id}
+                  onClick={() => setSelectedVersionId(v.id)}
+                  className={`text-xs px-3 py-1 rounded-full border transition-colors ${
+                    selectedVersionId === v.id
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "bg-background text-muted-foreground border-border hover:border-primary/50 hover:text-foreground"
+                  }`}
+                >
+                  v{v.version_no}
+                  {v.version_no === prompt.latest_version_no && (
+                    <span className="ml-1 opacity-60">(latest)</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
 
-          </div>
-
-          {/* Sidebar Area - Right Column */}
-          <div className="space-y-6">
-            
-            <Card className="border-border shadow-sm">
-              <CardHeader className="pt-4 pb-4 border-b">
-                <CardTitle className="text-base font-semibold">Metadata</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4 space-y-3">
-                <div className="grid grid-cols-[100px_1fr] items-baseline">
-                  <div className="text-sm font-semibold">Category:</div>
-                  <div className="text-sm">{prompt.category ? prompt.category.name : "-"}</div>
-                </div>
-                <div className="grid grid-cols-[100px_1fr] items-baseline">
-                  <div className="text-sm font-semibold">Status:</div>
-                  <div className="text-sm capitalize">{prompt.status === 'PUBLISHED' ? 'Approved' : prompt.status.toLowerCase()}</div>
-                </div>
-                <div className="grid grid-cols-[100px_1fr] items-baseline">
-                  <div className="text-sm font-semibold">Model:</div>
-                  <div className="text-sm">{prompt.recommended_model || "gpt-4.1"}</div>
-                </div>
-                <div className="grid grid-cols-[100px_1fr] items-baseline">
-                  <div className="text-sm font-semibold">Owner:</div>
-                  <div className="text-sm">Admin</div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border shadow-sm">
-              <CardHeader className="pt-4 pb-4 border-b">
-                <CardTitle className="text-base font-semibold">Variables</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-4">
-                {latestVersion?.promptVariables && latestVersion.promptVariables.length > 0 ? (
-                  <ul className="space-y-3">
-                    {latestVersion.promptVariables.map(v => (
-                      <li key={v.id} className="text-sm">
-                        <div className="font-mono text-foreground">{v.name}</div>
-                      </li>
-                    ))}
-                  </ul>
-                ) : (
-                  <p className="text-sm text-muted-foreground">ไม่มีตัวแปร</p>
+          {/* Template Card */}
+          <Card className="border-border shadow-sm overflow-hidden">
+            <CardHeader className="bg-background pb-2 flex flex-row items-center justify-between">
+              <CardTitle className="text-base font-semibold">
+                Template
+                {selectedVersion && (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    — v{selectedVersion.version_no}
+                    {selectedVersion.version_no === prompt.latest_version_no ? " (latest)" : ""}
+                  </span>
                 )}
-              </CardContent>
-            </Card>
+              </CardTitle>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-7 w-7 text-muted-foreground hover:text-foreground"
+                onClick={copyToClipboard}
+                title="Copy template"
+              >
+                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </CardHeader>
+            <CardContent className="pt-2">
+              <div className="bg-secondary p-4 rounded-md border text-sm font-mono whitespace-pre-wrap text-foreground min-h-[120px]">
+                {selectedVersion?.template_content || "No content"}
+              </div>
+            </CardContent>
+          </Card>
 
-          </div>
+          {/* Version History Timeline */}
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-base font-semibold">Version History</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-2">
+              {prompt.versions.length === 0 ? (
+                <p className="text-sm text-muted-foreground">ยังไม่มี version</p>
+              ) : (
+                <ol className="relative border-l border-border ml-3 space-y-0">
+                  {prompt.versions.map((v, idx) => {
+                    const isSelected = v.id === selectedVersionId;
+                    const isLatest = v.version_no === prompt.latest_version_no;
+                    return (
+                      <li key={v.id} className="mb-0 ml-6">
+                        {/* Timeline dot */}
+                        <span
+                          className={`absolute -left-3 flex h-6 w-6 items-center justify-center rounded-full border-2 transition-colors ${
+                            isSelected
+                              ? "bg-primary border-primary text-primary-foreground"
+                              : "bg-background border-border text-muted-foreground"
+                          }`}
+                        >
+                          <span className="text-[10px] font-bold">{v.version_no}</span>
+                        </span>
+
+                        <button
+                          onClick={() => setSelectedVersionId(v.id)}
+                          className={`w-full text-left py-3 px-3 rounded-md transition-colors group ${
+                            isSelected ? "bg-primary/5" : "hover:bg-muted/40"
+                          }`}
+                        >
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-sm font-semibold ${isSelected ? "text-primary" : "text-foreground"}`}>
+                              v{v.version_no}
+                            </span>
+                            {isLatest && (
+                              <Badge variant="secondary" className="text-[10px] h-4 px-1.5">latest</Badge>
+                            )}
+                            {isSelected && (
+                              <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-primary border-primary/40">
+                                viewing
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-1 mt-0.5 text-xs text-muted-foreground">
+                            <Clock className="h-3 w-3" />
+                            {new Date(v.created_at).toLocaleString("th-TH", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                            })}
+                          </div>
+                          {v.promptVariables.length > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {v.promptVariables.length} variable{v.promptVariables.length > 1 ? "s" : ""}
+                            </p>
+                          )}
+                        </button>
+
+                        {idx < prompt.versions.length - 1 && <div className="h-2" />}
+                      </li>
+                    );
+                  })}
+                </ol>
+              )}
+            </CardContent>
+          </Card>
 
         </div>
-      </main>
+
+        {/* ─── Right: Metadata + Variables ─── */}
+        <div className="space-y-6">
+
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pt-4 pb-4 border-b">
+              <CardTitle className="text-base font-semibold">Metadata</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4 space-y-3">
+              <div className="grid grid-cols-[90px_1fr] items-baseline gap-1">
+                <div className="text-sm font-semibold text-muted-foreground">Category</div>
+                <div className="text-sm">{prompt.category ? prompt.category.name : "—"}</div>
+              </div>
+              <div className="grid grid-cols-[90px_1fr] items-baseline gap-1">
+                <div className="text-sm font-semibold text-muted-foreground">Status</div>
+                <div>{getStatusBadge(prompt.status)}</div>
+              </div>
+              <div className="grid grid-cols-[90px_1fr] items-baseline gap-1">
+                <div className="text-sm font-semibold text-muted-foreground">Model</div>
+                <div className="text-sm">{prompt.recommended_model || "gpt-4.1"}</div>
+              </div>
+              <div className="grid grid-cols-[90px_1fr] items-baseline gap-1">
+                <div className="text-sm font-semibold text-muted-foreground">Versions</div>
+                <div className="text-sm">{prompt.versions.length}</div>
+              </div>
+              <div className="grid grid-cols-[90px_1fr] items-baseline gap-1">
+                <div className="text-sm font-semibold text-muted-foreground">Updated</div>
+                <div className="text-xs text-muted-foreground">
+                  {new Date(prompt.updated_at).toLocaleDateString("th-TH")}
+                </div>
+              </div>
+              {prompt.tags.length > 0 && (
+                <div className="pt-1">
+                  <div className="text-sm font-semibold text-muted-foreground mb-2">Tags</div>
+                  <div className="flex flex-wrap gap-1.5">
+                    {prompt.tags.map(t => (
+                      <span key={t.id} className="text-xs bg-muted px-2 py-0.5 rounded-full text-muted-foreground">
+                        #{t.name}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-border shadow-sm">
+            <CardHeader className="pt-4 pb-4 border-b">
+              <CardTitle className="text-base font-semibold">
+                Variables
+                {selectedVersion && selectedVersion.promptVariables.length > 0 && (
+                  <span className="ml-2 text-xs font-normal text-muted-foreground">
+                    (v{selectedVersion.version_no})
+                  </span>
+                )}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              {!selectedVersion || selectedVersion.promptVariables.length === 0 ? (
+                <p className="text-sm text-muted-foreground">ไม่มีตัวแปร</p>
+              ) : (
+                <ul className="space-y-3">
+                  {selectedVersion.promptVariables.map(v => (
+                    <li key={v.id} className="text-sm border rounded-md p-3 bg-muted/20">
+                      <div className="font-mono font-semibold text-foreground">{`{{${v.name}}}`}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5 uppercase tracking-wide">{v.type}</div>
+                      {v.description && (
+                        <div className="text-xs text-muted-foreground mt-1">{v.description}</div>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
+          </Card>
+
+        </div>
+      </div>
     </div>
   );
 }
