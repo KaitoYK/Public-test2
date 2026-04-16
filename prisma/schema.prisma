@@ -20,6 +20,7 @@ model Users {
   // Relations
   prompts          Prompts[]         @relation("UserPrompts")
   created_versions Prompt_versions[]
+  favorites        Favorites[]
 }
 
 model Categories {
@@ -57,6 +58,8 @@ model Prompts {
   versions  Prompt_versions[]
   variables Prompt_variables[]
   tags      Prompt_tags[]
+  collections Collections_prompts[]
+  favorites Favorites[]
 }
 
 model Tags {
@@ -124,6 +127,44 @@ model Prompt_tags {
   tag    Tags    @relation(fields: [tag_id], references: [id], onDelete: Cascade)
 
   @@id([prompt_id, tag_id]) // Composite Primary Key
+}
+
+model Collections{
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(100)
+  description String?  @db.Text
+  visibility String   @default("PRIVATE") @db.VarChar(30)
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  // Relations
+  prompts Collections_prompts[]
+}
+
+model Collections_prompts{
+  collection_id Int
+  prompt_id Int
+  sort_order    Int      @default(0)
+
+  // Relations
+  collection Collections @relation(fields: [collection_id], references: [id], onDelete: Cascade)
+  prompt     Prompts    @relation(fields: [prompt_id], references: [id], onDelete: Cascade)
+
+  @@id([collection_id, prompt_id]) // Composite Primary Key
+}
+
+model Favorites{
+  id         Int      @id @default(autoincrement())
+  user_id    Int
+  prompt_id  Int
+  created_at DateTime @default(now()) @db.Timestamptz
+  updated_at DateTime @default(now()) @updatedAt @db.Timestamptz
+
+  // Relations
+  user    Users   @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  prompt  Prompts @relation(fields: [prompt_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, prompt_id], name: "uq_favorites")
 }
 
 enum Role {
