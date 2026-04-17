@@ -172,13 +172,16 @@ export default function EditPromptPage() {
       await axios.post(`/api/prompts/${id}/versions`, versionPayload);
 
       router.push(`/prompts/${id}`);
+
     } catch (err: any) {
+
       if (err.response?.data?.error) {
         setError(err.response.data.error);
       } else {
         setError("ไม่สามารถอัปเดต Prompt ได้ เกิดข้อผิดพลาด");
       }
       setSaving(false);
+
     }
   };
 
@@ -214,7 +217,7 @@ export default function EditPromptPage() {
             </div>
             <Button type="submit" disabled={saving}>
               <Save className="mr-2 h-4 w-4" />
-              {saving ? "กำลังบันทึก..." : "อัปเดต และบันทึก"}
+              {saving ? "Saving..." : "Save Change"}
             </Button>
           </div>
 

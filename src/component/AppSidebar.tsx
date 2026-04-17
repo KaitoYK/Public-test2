@@ -8,7 +8,9 @@ import {
   FolderOpen, 
   Settings,
   PlayCircle,
-  Sparkles
+  Sparkles,
+  Star,
+  Pin
 } from "lucide-react";
 
 import {
@@ -30,6 +32,7 @@ const navItems = [
   { label: "Dashboard", icon: LayoutDashboard, path: "/dashboard" },
   { label: "Prompts", icon: FileText, path: "/prompts" },
   { label: "Playground", icon: PlayCircle, path: "/playground" },
+  { label: "Favorites", icon: Pin, path: "/favorites" },
   { label: "Collections", icon: FolderOpen, path: "/collections" },
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
