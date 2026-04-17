@@ -55,6 +55,8 @@ export async function GET(request: Request, { params }: RouteContext) {
   }
 }
 
+
+
 /**
  * POST /api/prompts/[id]/versions
  * Create a new version for a prompt.
@@ -109,12 +111,14 @@ export async function POST(request: Request, { params }: RouteContext) {
         },
       });
 
+
       // Create variables for this version
       if (data.variables && data.variables.length > 0) {
-        // First delete existing prompt-level variables to handle the unique constraint
-        await tx.prompt_variables.deleteMany({
-          where: { prompt_id: promptId }
-        });
+
+        // // First delete existing prompt-level variables to handle the unique constraint
+        // await tx.prompt_variables.deleteMany({
+        //   where: { prompt_id: promptId }
+        // });
 
         // re-create variables for this version
         await tx.prompt_variables.createMany({

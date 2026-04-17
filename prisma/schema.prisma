@@ -109,13 +109,13 @@ model Prompt_variables {
 
   // FK Field
   prompt_id         Int
-  prompt_version_id Int?
+  prompt_version_id Int
 
   // Relation
   prompt         Prompts          @relation(fields: [prompt_id], references: [id], onDelete: Cascade)
-  prompt_version Prompt_versions? @relation(fields: [prompt_version_id], references: [id])
+  prompt_version Prompt_versions? @relation(fields: [prompt_version_id], references: [id], onDelete: Cascade)
 
-  @@unique([prompt_id, name], name: "uq_prompt_variable_name")
+  @@unique([prompt_version_id, name], name: "uq_prompt_variable_version_name")
 }
 
 model Prompt_tags {

@@ -58,10 +58,7 @@ function PromptCard({
   onUnfavorite: (id: number) => void;
 }) {
   const p = item.prompt;
-  const totalVars = p.versions.reduce(
-    (sum, v) => sum + v.promptVariables.length,
-    0
-  );
+  const totalVars = p?.versions?.reduce((sum, version) => sum + version.promptVariables.length , 0);
 
   return (
     <div className="group relative bg-card border border-border rounded-xl p-5 hover:border-primary/40 hover:shadow-md transition-all duration-200">
@@ -107,7 +104,7 @@ function PromptCard({
         )}
 
         {/* Tags */}
-        {p.tags.length > 0 && (
+        {p.tags?.length > 0 && (
           <div className="mt-3 flex flex-wrap gap-1.5">
             {p.tags.slice(0, 4).map((t) => (
               <span
