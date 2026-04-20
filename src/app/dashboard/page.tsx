@@ -19,6 +19,7 @@ import { Card, CardHeader, CardTitle, CardContent } from "@/component/ui/card";
 import { Button } from "@/component/ui/button";
 import { Skeleton } from "@/component/ui/skeleton";
 import { Badge } from "@/component/ui/badge";
+import { useSession } from "next-auth/react";
 
 type DashboardStats = {
   totalPrompts: number;
@@ -68,6 +69,9 @@ export default function DashboardPage() {
       default: return <Badge>{status}</Badge>;
     }
   };
+
+  const { data: session } = useSession();
+  
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -202,9 +206,11 @@ export default function DashboardPage() {
                     <span className="text-muted-foreground">Tags ทั้งหมด:</span>
                     <span className="text-xl font-bold">{stats?.totalTags || 0}</span>
                   </div>
-                  <Button variant="outline" className="w-full" asChild>
-                    <Link href="/settings">จัดการ Category / Tag</Link>
-                  </Button>
+                  {session?.user?.role === 'ADMIN' && (
+                    <Button variant="outline" className="w-full" asChild>
+                      <Link href="/settings">จัดการ Category / Tag</Link>
+                    </Button>
+                  )}
                 </div>
               )}
             </CardContent>

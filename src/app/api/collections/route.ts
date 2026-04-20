@@ -13,7 +13,10 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
+    const isAdmin = session.user.role === "ADMIN";
+
     const categories = await prisma.collections.findMany({
+      where: isAdmin ? undefined : { visibility: "PUBLIC" },
       orderBy: { id: "asc" },
       include: {
         _count: {

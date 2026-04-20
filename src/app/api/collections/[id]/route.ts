@@ -83,10 +83,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        const userRole = session.user.role;
-        if (userRole !== "ADMIN" && userRole !== "EDITOR") {
-            return NextResponse.json({ error: "You don't have permission to update a collection, only ADMIN and EDITOR can update a collection" }, { status: 403 });
-        }
+        // const userRole = session.user.role;
+        // if (userRole !== "ADMIN" && userRole !== "EDITOR") {
+        //     return NextResponse.json({ error: "You don't have permission to update a collection, only ADMIN and EDITOR can update a collection" }, { status: 403 });
+        // }
 
         const { id } = await params;
         const collectionId = Number(id);
@@ -123,7 +123,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
     }
 }
 
-export async function GET(request: Request, { params }: RouteContext) {
+    export async function GET(request: Request, { params }: RouteContext) {
     try {
         const session = await getServerAuthSession();
         if (!session?.user) {
@@ -137,9 +137,42 @@ export async function GET(request: Request, { params }: RouteContext) {
             return NextResponse.json({ error: "Invalid collection ID" }, { status: 400 });
         }
 
+        const isAdmin = session.user.role === "ADMIN";
+        const userId = Number(session.user.id);
+
         const collection = await prisma.collections.findUnique({
             where: { id: collectionId },
+            include: {
+                prompts: {
+                    where: isAdmin ? undefined : {
+                        prompt: {
+                            OR: [
+                                { visibility: "PUBLIC" },
+                                { owner_id: userId }
+                            ]
+                        }
+                    },
+                    include: {
+                        prompt: {
+                            include: {
+                                category: true,
+                            }
+                        }
+                    },
+                    orderBy: {
+                        sort_order: 'asc'
+                    }
+                }
+            }
         });
+
+        if (!collection) {
+            return NextResponse.json({ error: "Collection not found" }, { status: 404 });
+        }
+
+        if (!isAdmin && collection.visibility !== "PUBLIC") {
+            return NextResponse.json({ error: "You do not have permission to view this collection" }, { status: 403 });
+        }
 
         return NextResponse.json(collection);
     } catch (error) {

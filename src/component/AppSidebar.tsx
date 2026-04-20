@@ -37,7 +37,7 @@ const navItems = [
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
-export function AppSidebar({ user }: { user: { email?: string | null; name?: string | null } }) {
+export function AppSidebar({ user }: { user: { email?: string | null; name?: string | null; role?: string } }) {
   const pathname = usePathname();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -65,6 +65,8 @@ export function AppSidebar({ user }: { user: { email?: string | null; name?: str
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
+                if (item.path === "/settings" && user.role !== "ADMIN") return null;
+
                 const isActive =
                   item.path === "/dashboard"
                     ? pathname === "/dashboard" || pathname === "/"

@@ -180,3 +180,8 @@ enum Status {
   REJECTED
   REVIEW
 }
+
+enum Visibility {
+  PRIVATE
+  PUBLIC
+}

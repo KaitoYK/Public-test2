@@ -135,7 +135,7 @@ export default function PromptDetailPage() {
             {isFavorite(prompt.id) ? "Unfavorite" : "Favorite"}
           </Button>
           <Button variant="outline" size="sm" asChild>
-            <Link href="#">Use Prompt</Link>
+            <Link href={`/playground?promptId=${id}&versionId=${selectedVersionId || prompt.versions[0]?.id}`}>Use Prompt</Link>
           </Button>
           <Button size="sm" asChild>
             <Link href={`/prompts/${id}/edit`}>Edit</Link>
