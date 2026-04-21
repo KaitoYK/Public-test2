@@ -37,7 +37,7 @@ const navItems = [
   { label: "Settings", icon: Settings, path: "/settings" },
 ];
 
-export function AppSidebar({ user }: { user: { email?: string | null; name?: string | null; role?: string } }) {
+export function AppSidebar({ user }: { user: { email?: string | null; name?: string | null; role?: string | null; image?: string | null; id?: string } }) {
   const pathname = usePathname();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
