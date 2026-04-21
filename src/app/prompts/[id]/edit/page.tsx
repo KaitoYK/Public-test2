@@ -113,7 +113,7 @@ export default function EditPromptPage() {
   useEffect(() => {
     if (loadingContext) return;
 
-    const rawMatches = Array.from(templateContent.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g));
+    const rawMatches = Array.from(templateContent.matchAll(/\{\{\s*([a-zA-Z0-9_]*)\s*\}\}/g));
     const detectedNames = Array.from(new Set(rawMatches.map(m => m[1])));
 
     setVariables(prev => {
@@ -128,6 +128,20 @@ export default function EditPromptPage() {
 
   const updateVariable = (name: string, field: keyof VariableConfig, value: string) => {
     setVariables(prev => prev.map(v => v.name === name ? { ...v, [field]: value } : v));
+  };
+
+  const renameVariable = (oldName: string, newNameRaw: string) => {
+    const newName = newNameRaw.replace(/[^a-zA-Z0-9_]/g, '');
+    if (oldName === newName) return;
+
+    setVariables(prev => prev.map(v => v.name === oldName ? { ...v, name: newName } : v));
+
+    setTemplateContent(prev => {
+      if (oldName === "") {
+        return prev.replace(/\{\{\s*\}\}/g, `{{${newName}}}`);
+      }
+      return prev.replace(new RegExp(`\\{\\{\\s*${oldName}\\s*\\}\\}`, 'g'), `{{${newName}}}`);
+    });
   };
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -324,10 +338,12 @@ export default function EditPromptPage() {
                         <Sparkles className="h-4 w-4 text-primary" /> ตัวแปรที่ตรวจพบ ({variables.length})
                       </div>
                       <div className="space-y-4">
-                        {variables.map(v => (
-                          <div key={v.name} className="grid grid-cols-[1fr_2fr] gap-4 items-start border-l-2 border-primary/50 pl-3">
+                        {variables.map((v, idx) => (
+                          <div key={idx} className="grid grid-cols-[1fr_2fr] gap-4 items-start border-l-2 border-primary/50 pl-3">
                             <div>
-                              <div className="font-mono text-sm font-bold text-primary mb-2">{"{{"}{v.name}{"}}"}</div>
+                              <div className="font-mono text-sm font-bold text-primary mb-2 truncate" title={v.name}>
+                                {"{{"}{v.name.length > 22 ? v.name.substring(0, 18) + "..." : v.name}{"}}"}
+                              </div>
                               <select 
                                 className="w-full text-xs h-8 rounded-md border border-input bg-background px-2"
                                 value={v.type}
@@ -341,10 +357,10 @@ export default function EditPromptPage() {
                             </div>
                             <div className="space-y-2">
                               <Input 
-                                placeholder="ชื่อที่แสดง (Label)" 
-                                className="h-8 text-xs" 
-                                value={v.label} 
-                                onChange={(e) => updateVariable(v.name, "label", e.target.value)} 
+                                placeholder="ชื่อที่แสดงและอยู่ใน Template (Label / Variable)" 
+                                className="h-8 text-xs font-mono" 
+                                value={v.name} 
+                                onChange={(e) => renameVariable(v.name, e.target.value)} 
                               />
                               <Input 
                                 placeholder="คำอธิบาย (Description)" 

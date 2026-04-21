@@ -60,7 +60,7 @@ export default function CreatePromptPage() {
   // - คงค่า config เดิมของตัวแปรที่มีอยู่แล้ว (ไม่ reset ทุกครั้ง)
   // -------------------------------------------------------
   useEffect(() => {
-    const rawMatches = Array.from(templateContent.matchAll(/\{\{\s*([a-zA-Z0-9_]+)\s*\}\}/g));
+    const rawMatches = Array.from(templateContent.matchAll(/\{\{\s*([a-zA-Z0-9_]*)\s*\}\}/g));
     const detectedNames = Array.from(new Set(rawMatches.map(m => m[1])));
 
     setVariables(prev => {
@@ -79,6 +79,20 @@ export default function CreatePromptPage() {
   // อัปเดต field ของตัวแปรตัวใดตัวหนึ่ง (type / label / description)
   const updateVariable = (name: string, field: keyof VariableConfig, value: string) => {
     setVariables(prev => prev.map(v => v.name === name ? { ...v, [field]: value } : v));
+  };
+
+  const renameVariable = (oldName: string, newNameRaw: string) => {
+    const newName = newNameRaw.replace(/[^a-zA-Z0-9_]/g, '');
+    if (oldName === newName) return;
+
+    setVariables(prev => prev.map(v => v.name === oldName ? { ...v, name: newName } : v));
+
+    setTemplateContent(prev => {
+      if (oldName === "") {
+        return prev.replace(/\{\{\s*\}\}/g, `{{${newName}}}`);
+      }
+      return prev.replace(new RegExp(`\\{\\{\\s*${oldName}\\s*\\}\\}`, 'g'), `{{${newName}}}`);
+    });
   };
 
   // เพิ่ม tag เมื่อกด Enter (ป้องกัน duplicate)
@@ -274,11 +288,12 @@ export default function CreatePromptPage() {
                       </div>
                       <div className="space-y-4">
                         {/* แสดง config ของแต่ละตัวแปร */}
-                        {variables.map(v => (
-                          <div key={v.name} className="grid grid-cols-[1fr_2fr] gap-4 items-start border-l-2 border-primary/50 pl-3">
+                        {variables.map((v, idx) => (
+                          <div key={idx} className="grid grid-cols-[1fr_2fr] gap-4 items-start border-l-2 border-primary/50 pl-3">
                             <div>
-                              {/* ชื่อตัวแปรในรูปแบบ {{name}} */}
-                              <div className="font-mono text-sm font-bold text-primary mb-2">{"{{"}{v.name}{"}}"}</div>
+                              <div className="font-mono text-sm font-bold text-primary mb-2 truncate" title={v.name}>
+                                {"{{"}{v.name.length > 22 ? v.name.substring(0, 18) + "..." : v.name}{"}}"}
+                              </div>
                               {/* Dropdown เลือก type ของตัวแปร */}
                               <select 
                                 className="w-full text-xs h-8 rounded-md border border-input bg-background px-2"
@@ -292,12 +307,11 @@ export default function CreatePromptPage() {
                               </select>
                             </div>
                             <div className="space-y-2">
-                              {/* Input สำหรับ label และ description ของตัวแปร */}
                               <Input 
-                                placeholder="ชื่อที่แสดง (Label)" 
-                                className="h-8 text-xs" 
-                                value={v.label} 
-                                onChange={(e) => updateVariable(v.name, "label", e.target.value)} 
+                                placeholder="ชื่อที่แสดงและอยู่ใน Template (Label / Variable)" 
+                                className="h-8 text-xs font-mono" 
+                                value={v.name} 
+                                onChange={(e) => renameVariable(v.name, e.target.value)} 
                               />
                               <Input 
                                 placeholder="คำอธิบาย (Description)" 

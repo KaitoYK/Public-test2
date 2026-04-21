@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { Folder, ArrowLeft, Clock, LayoutGrid, Eye, EyeOff, Plus } from "lucide-react";
+import { Folder, ArrowLeft, Clock, LayoutGrid, Eye, EyeOff, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/component/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/component/ui/card";
 import { Badge } from "@/component/ui/badge";
@@ -80,6 +80,27 @@ export default function CollectionDetailsPage() {
       console.error(err);
     } finally {
       setLoadingPrompts(false);
+    }
+  };
+
+  const handleRemovePromptFromCollection = async (e: React.MouseEvent, promptId: number) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!confirm("Are you sure you want to remove this prompt from the collection?")) return;
+    
+    try {
+      await axios.delete(`/api/collections/${params.id}/prompts/${promptId}`);
+      setCollection(prev => {
+        if (!prev) return prev;
+        return {
+           ...prev,
+           prompts: prev.prompts.filter(p => p.prompt_id !== promptId)
+        };
+      });
+    } catch (err) {
+      console.error("Failed to remove prompt:", err);
+      alert("Failed to remove prompt from collection");
     }
   };
 
@@ -184,11 +205,14 @@ export default function CollectionDetailsPage() {
             </div>
           </div>
           {session?.user?.role === "ADMIN" && (
-            <Button onClick={handleOpenAddPrompt} className="hidden md:flex">
-              <LayoutGrid className="mr-2 h-4 w-4" /> Add Prompt
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handleOpenAddPrompt} className="hidden md:flex">
+                <LayoutGrid className="mr-2 h-4 w-4" /> Add Prompt
+              </Button>
+            </div>
           )}
         </div>
+        
       </div>
 
       {/* Prompts section */}
@@ -234,7 +258,19 @@ export default function CollectionDetailsPage() {
                       <CardTitle className="text-base font-semibold line-clamp-1 group-hover:text-primary transition-colors">
                         {cp.prompt.title}
                       </CardTitle>
-                      {getStatusBadge(cp.prompt.status)}
+                      <div className="flex items-center gap-2">
+                        {getStatusBadge(cp.prompt.status)}
+                        {session?.user?.role === "ADMIN" && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-6 w-6 text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                            onClick={(e) => handleRemovePromptFromCollection(e, cp.prompt_id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </div>
                     {cp.prompt.category && (
                       <Badge variant="outline" className="text-[10px] uppercase w-fit tracking-wider">

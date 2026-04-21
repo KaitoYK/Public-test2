@@ -32,38 +32,67 @@ export async function GET(request: Request) {
       ? Number(searchParams.get("categoryId"))
       : undefined;
     const tag = searchParams.get("tag")?.trim() || undefined;
+    const visibility = searchParams.get("visibility") || undefined;
 
     const userId = Number(session.user.id);
     const skip = (page - 1) * limit;
 
     // Build where clause
-    const where: Record<string, unknown> = {
-      deleted_at: null, // Exclude soft-deleted
-      owner_id: userId,
-    };
+    const andConditions: any[] = [
+      { deleted_at: null }, // Exclude soft-deleted
+    ];
+
+    const userRole = session.user.role;
+
+    if (visibility === 'PUBLIC') {
+      andConditions.push({ visibility: 'PUBLIC' });
+    } else if (visibility === 'PRIVATE') {
+      andConditions.push({ visibility: 'PRIVATE' });
+      if (userRole === "ADMIN" || userRole === "EDITOR") {
+        andConditions.push({ OR: [{ owner_id: userId }, { status: 'REVIEW' }] });
+      } else {
+        andConditions.push({ owner_id: userId });
+      }
+    } else {
+      // By default show user's own prompts OR any public prompts
+      const defaultOr: any[] = [
+        { owner_id: userId },
+        { visibility: 'PUBLIC' }
+      ];
+      if (userRole === "ADMIN" || userRole === "EDITOR") {
+        defaultOr.push({ status: 'REVIEW' });
+      }
+      andConditions.push({ OR: defaultOr });
+    }
 
     if (q) {
-      where.OR = [
-        { title: { contains: q, mode: "insensitive" } },
-        { description: { contains: q, mode: "insensitive" } },
-      ];
+      andConditions.push({
+        OR: [
+          { title: { contains: q, mode: "insensitive" } },
+          { description: { contains: q, mode: "insensitive" } },
+        ],
+      });
     }
 
     if (status) {
-      where.status = status;
+      andConditions.push({ status });
     }
 
     if (categoryId) {
-      where.category_id = categoryId;
+      andConditions.push({ category_id: categoryId });
     }
 
     if (tag) {
-      where.tags = {
-        some: {
-          tag: { name: { equals: tag, mode: "insensitive" } },
+      andConditions.push({
+        tags: {
+          some: {
+            tag: { name: { equals: tag, mode: "insensitive" } },
+          },
         },
-      };
+      });
     }
+
+    const where = { AND: andConditions };
 
     const [prompts, total] = await Promise.all([
       prisma.prompts.findMany({

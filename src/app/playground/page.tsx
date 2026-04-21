@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { Check, Copy, Play } from "lucide-react";
 import axios from "axios";
 
@@ -20,8 +20,12 @@ type VariableInfo = {
 
 function PlaygroundContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const promptId = searchParams.get("promptId");
   const versionId = searchParams.get("versionId");
+
+  const [publicPrompts, setPublicPrompts] = useState<any[]>([]);
+  const [loadingList, setLoadingList] = useState(false);
 
   const [loading, setLoading] = useState(false);
   const [template, setTemplate] = useState("");
@@ -68,6 +72,24 @@ function PlaygroundContent() {
     fetchPrompt();
   }, [promptId, versionId]);
 
+  useEffect(() => {
+    if (promptId) return;
+    
+    const fetchPublicPrompts = async () => {
+      setLoadingList(true);
+      try {
+        const res = await axios.get("/api/prompts?visibility=PUBLIC&status=PUBLISHED&limit=20");
+        setPublicPrompts(res.data.data || []);
+      } catch (err) {
+        console.error("Failed to fetch public prompts:", err);
+      } finally {
+        setLoadingList(false);
+      }
+    };
+    
+    fetchPublicPrompts();
+  }, [promptId]);
+
   // Regex matches {{variableName}} 
   const renderedPrompt = template.replace(/\{\{([^}]+)\}\}/g, (match, varName) => {
     const trimmedName = varName.trim();
@@ -88,9 +110,40 @@ function PlaygroundContent() {
 
   if (!promptId) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center">
-        <h2 className="text-xl font-bold mb-2">Prompt Playground</h2>
-        <p className="text-muted-foreground">กรุณาเลือก Use Prompt จากหน้ารายละเอียด Prompt ก่อนทำการทดสอบ</p>
+      <div className="pb-20 max-w-6xl mx-auto space-y-6 pt-4 px-4 fade-in-up">
+        <div className="text-center mb-10 pt-10">
+          <h1 className="text-3xl font-bold tracking-tight mb-2" >Prompt Playground</h1>
+          
+        </div>
+        
+        {loadingList ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+             {[...Array(6)].map((_, i) => (
+                <Skeleton key={i} className="h-40 w-full rounded-xl" />
+             ))}
+          </div>
+        ) : publicPrompts.length === 0 ? (
+          <div className="text-center py-20 border rounded-xl bg-card/50 border-dashed">
+            <p className="text-muted-foreground">ไม่พบ Public Prompt ในขณะนี้</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {publicPrompts.map(p => (
+              <Card 
+                key={p.id} 
+                className="hover:border-primary/50 cursor-pointer transition-all hover:shadow-md bg-card" 
+                onClick={() => router.push(`/playground?promptId=${p.id}`)}
+              >
+                <CardHeader>
+                  <CardTitle className="text-lg line-clamp-1 text-foreground">{p.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{p.description || "ไม่มีรายละเอียด"}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </div>
     );
   }
@@ -98,7 +151,7 @@ function PlaygroundContent() {
   return (
     <div className="pb-20 max-w-6xl mx-auto space-y-6 pt-4 fade-in-up">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-2 text-slate-800 dark:text-slate-100">Prompt Playground</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2 text-slate-800 dark:text-slate-100" style={{ color: "#ffffff" }}>Prompt Playground</h1>
         <p className="text-muted-foreground">ทดลองกรอกตัวแปรและดูผลลัพธ์ก่อนใช้งานจริง</p>
       </div>
 

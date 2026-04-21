@@ -55,6 +55,11 @@ export async function DELETE(request: Request, { params }: RouteContext) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
+        const userRole = session.user.role;
+        if (userRole !== "ADMIN" && userRole !== "EDITOR") {
+            return NextResponse.json({ error: "You don't have permission to delete a collection, only ADMIN and EDITOR can delete a collection" }, { status: 403 });
+        }
+
         const { id } = await params;
         const collectionId = Number(id);
 
@@ -83,10 +88,10 @@ export async function PATCH(request: Request, { params }: RouteContext) {
             return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
         }
 
-        // const userRole = session.user.role;
-        // if (userRole !== "ADMIN" && userRole !== "EDITOR") {
-        //     return NextResponse.json({ error: "You don't have permission to update a collection, only ADMIN and EDITOR can update a collection" }, { status: 403 });
-        // }
+        const userRole = session.user.role;
+        if (userRole !== "ADMIN" && userRole !== "EDITOR") {
+            return NextResponse.json({ error: "You don't have permission to update a collection, only ADMIN and EDITOR can update a collection" }, { status: 403 });
+        }
 
         const { id } = await params;
         const collectionId = Number(id);

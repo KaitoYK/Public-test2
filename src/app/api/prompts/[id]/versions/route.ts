@@ -90,7 +90,7 @@ export async function POST(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Prompt not found" }, { status: 404 });
     }
 
-    if (prompt.owner_id !== userId && session.user.role !== "ADMIN") {
+    if (prompt.owner_id !== userId && session.user.role !== "ADMIN" && session.user.role !== "EDITOR") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

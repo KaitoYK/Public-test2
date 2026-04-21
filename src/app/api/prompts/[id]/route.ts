@@ -102,19 +102,23 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Prompt not found" }, { status: 404 });
     }
 
-    if (existing.owner_id !== userId && userRole !== "ADMIN") {
+    if (existing.owner_id !== userId && userRole !== "ADMIN" && userRole !== "EDITOR") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 
     const body = await request.json();
 
-    // If status is being updated
     if (body.status && Object.keys(body).length === 1) {
       const { status } = UpdatePromptStatusSchema.parse(body);
 
+      const updateData: any = { status };
+      if (status === "PUBLISHED") {
+        updateData.visibility = "PUBLIC";
+      }
+
       const updatedPrompt = await prisma.prompts.update({
         where: { id: promptId },
-        data: { status },
+        data: updateData,
       });
 
       return NextResponse.json(updatedPrompt);
@@ -222,7 +226,7 @@ export async function DELETE(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Prompt not found" }, { status: 404 });
     }
 
-    if (existing.owner_id !== userId && userRole !== "ADMIN") {
+    if (existing.owner_id !== userId && userRole !== "ADMIN" && userRole !== "EDITOR") {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
 

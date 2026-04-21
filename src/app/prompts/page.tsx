@@ -278,7 +278,11 @@ export default function PromptsList() {
                           : <span className="text-muted-foreground">-</span>}
                       </div>
                     </td>
-                    <td className="px-5 py-4 text-muted-foreground text-xs uppercase tracking-wider font-semibold">
+                    <td className={`px-5 py-4 text-xs uppercase tracking-wider font-semibold ${
+                      p.status === 'PUBLISHED' ? 'text-green-600' :
+                      p.status === 'REVIEW' ? 'text-orange-500' :
+                      'text-muted-foreground'
+                    }`}>
                       {getStatusText(p.status)}
                     </td>
                     <td className="px-5 py-4 text-muted-foreground text-sm">

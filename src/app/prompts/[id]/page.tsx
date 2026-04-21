@@ -1,10 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import Link from "next/link";
 import axios from "axios";
-import { Copy, Check, Clock, ChevronDown } from "lucide-react";
+import { Copy, Check, Clock, ChevronDown, Trash2 } from "lucide-react";
+import { useSession } from "next-auth/react";
 
 import { Card, CardHeader, CardTitle, CardContent } from "@/component/ui/card";
 import { Button } from "@/component/ui/button";
@@ -35,6 +36,7 @@ type PromptDetail = {
   latest_version_no: number;
   updated_at: string;
   category: { id: number; name: string } | null;
+  owner: { id: number; name: string; email: string };
   tags: { id: number; name: string }[];
   versions: Version[];
   recommended_model: string | null;
@@ -42,6 +44,11 @@ type PromptDetail = {
 
 export default function PromptDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
+
+  const { data: session } = useSession();
+  const userId = session?.user?.id;
+  const userRole = session?.user?.role;
 
   const {toggleFavorite, isFavorite} = useFavorites();
   const [prompt, setPrompt] = useState<PromptDetail | null>(null);
@@ -49,6 +56,54 @@ export default function PromptDetailPage() {
   const [error, setError] = useState("");
   const [copied, setCopied] = useState(false);
   const [selectedVersionId, setSelectedVersionId] = useState<number | null>(null);
+
+  const canEdit = 
+    userRole === "ADMIN" || 
+    userRole === "EDITOR" || 
+    (prompt && userId && Number(userId) === prompt.owner.id);
+
+  const canApprove = 
+    (userRole === "ADMIN" || userRole === "EDITOR") && 
+    (prompt?.status !== "PUBLISHED");
+
+  const canSendReview = 
+    (prompt && userId && Number(userId) === prompt.owner.id) && 
+    prompt?.status === "DRAFT";
+
+  const canDelete = 
+    userRole === "ADMIN" || 
+    userRole === "EDITOR" || 
+    (prompt && userId && Number(userId) === prompt.owner.id);
+
+  const handleDelete = async () => {
+    if (!confirm("คุณต้องการลบ Prompt นี้ทิ้งใช่หรือไม่? การกระทำนี้ไม่สามารถย้อนกลับได้")) return;
+    try {
+      await axios.delete(`/api/prompts/${id}`);
+      router.push("/prompts");
+    } catch (err: any) {
+      alert(err.response?.data?.error || "เกิดข้อผิดพลาดในการลบ Prompt");
+    }
+  };
+
+  const handleApprove = async () => {
+    if (!confirm("คุณต้องการอนุมัติ (Approve) Prompt นี้ให้สถานะเป็น PUBLISHED หรือไม่?")) return;
+    try {
+      await axios.patch(`/api/prompts/${id}`, { status: "PUBLISHED" });
+      setPrompt(prev => prev ? { ...prev, status: "PUBLISHED" } : null);
+    } catch (err: any) {
+      alert(err.response?.data?.error || "เกิดข้อผิดพลาดในการอนุมัติ Prompt");
+    }
+  };
+
+  const handleSendReview = async () => {
+    if (!confirm("คุณต้องการส่ง Prompt นี้ไปให้ผู้ดูแลระบบตรวจสอบ (Review) หรือไม่?")) return;
+    try {
+      await axios.patch(`/api/prompts/${id}`, { status: "REVIEW" });
+      setPrompt(prev => prev ? { ...prev, status: "REVIEW" } : null);
+    } catch (err: any) {
+      alert(err.response?.data?.error || "เกิดข้อผิดพลาดในการส่ง Review");
+    }
+  };
 
   useEffect(() => {
     if (!id) return;
@@ -137,9 +192,26 @@ export default function PromptDetailPage() {
           <Button variant="outline" size="sm" asChild>
             <Link href={`/playground?promptId=${id}&versionId=${selectedVersionId || prompt.versions[0]?.id}`}>Use Prompt</Link>
           </Button>
-          <Button size="sm" asChild>
-            <Link href={`/prompts/${id}/edit`}>Edit</Link>
-          </Button>
+          {canSendReview && (
+            <Button size="sm" variant="secondary" onClick={handleSendReview}>
+              <Clock className="mr-1 h-4 w-4" /> Send for Review
+            </Button>
+          )}
+          {canApprove && (
+            <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white" onClick={handleApprove}>
+              <Check className="mr-1 h-4 w-4" /> Approve
+            </Button>
+          )}
+          {canEdit && (
+            <Button size="sm" asChild>
+              <Link href={`/prompts/${id}/edit`}>Edit</Link>
+            </Button>
+          )}
+          {canDelete && (
+            <Button size="sm" variant="destructive" onClick={handleDelete}>
+              <Trash2 className="mr-1 h-4 w-4" /> Delete
+            </Button>
+          )}
         </div>
       </div>
 

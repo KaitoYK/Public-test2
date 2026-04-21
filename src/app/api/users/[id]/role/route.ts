@@ -11,7 +11,7 @@ export async function PATCH(request: Request, { params }: RouteContext) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
-    //Role Guard: Can restrict this only to ADMIN in a real application
+    // //Role Guard: Can restrict this only to ADMIN in a real application
     if (session.user.role !== "ADMIN") {
       return NextResponse.json({ error: "Forbidden: Admins only" }, { status: 403 });
     }
