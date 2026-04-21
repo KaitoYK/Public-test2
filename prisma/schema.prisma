@@ -54,7 +54,7 @@ model Prompts {
 
   // Relations
   category  Categories?        @relation(fields: [category_id], references: [id])
-  owner     Users              @relation("UserPrompts", fields: [owner_id], references: [id])
+  owner     Users              @relation("UserPrompts", fields: [owner_id], references: [id], onDelete: Cascade)
   versions  Prompt_versions[]
   variables Prompt_variables[]
   tags      Prompt_tags[]
@@ -87,7 +87,7 @@ model Prompt_versions {
 
   // Relations
   prompt          Prompts            @relation(fields: [prompt_id], references: [id], onDelete: Cascade)
-  creator         Users              @relation(fields: [created_by], references: [id])
+  creator         Users              @relation(fields: [created_by], references: [id], onDelete: Cascade)
   promptVariables Prompt_variables[]
 
   @@unique([prompt_id, version_no], name: "uq_prompt_versions")
