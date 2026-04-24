@@ -39,7 +39,12 @@ type Collection = {
   prompts: CollectionPrompt[];
 };
 
+/**
+ * หน้าแสดงรายละเอียดของ Collection
+ * ดึงข้อมูล Collection (และ Prompts ภายใน) โดยอ้างอิงจาก `params.id`
+ */
 export default function CollectionDetailsPage() {
+  // ดึงค่า params (ตัวแปรที่รับมาจาก URL Path)
   const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
@@ -52,8 +57,9 @@ export default function CollectionDetailsPage() {
   const [availablePrompts, setAvailablePrompts] = useState<any[]>([]);
   const [loadingPrompts, setLoadingPrompts] = useState(false);
 
+  // Effect สำหรับโหลดข้อมูล Collection เมื่อ Component ถูก Mount หรือ params.id เปลี่ยนแปลง
   useEffect(() => {
-    if (!params.id) return;
+    if (!params.id) return; // หากไม่มี id ใน URL ก็ไม่ต้องโหลด
     
     const fetchCollection = async () => {
       try {

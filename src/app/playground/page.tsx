@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Check, Copy, Play } from "lucide-react";
 import axios from "axios";
+import { toast } from "sonner";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/component/ui/card";
 import { Button } from "@/component/ui/button";
@@ -32,6 +33,8 @@ function PlaygroundContent() {
   const [variables, setVariables] = useState<VariableInfo[]>([]);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [runValues, setRunValues] = useState<Record<string, string>>({});
+  const [currentVersionId, setCurrentVersionId] = useState<number | null>(null);
+  const [isRunning, setIsRunning] = useState(false);
   
   const [isCopied, setIsCopied] = useState(false);
 
@@ -53,6 +56,7 @@ function PlaygroundContent() {
         if (targetVersion) {
           setTemplate(targetVersion.template_content || "");
           setVariables(targetVersion.promptVariables || []);
+          setCurrentVersionId(targetVersion.id);
           
           // Initialize values to empty string
           const initialVals: Record<string, string> = {};
@@ -104,8 +108,33 @@ function PlaygroundContent() {
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const handleRunPrompt = () => {
+  const handleRunPrompt = async () => {
+    setIsRunning(true);
+    await new Promise(resolve => setTimeout(resolve, 1500));
     setRunValues(variableValues);
+
+    if (promptId && currentVersionId) {
+      const newRenderedPrompt = template.replace(/\{\{([^}]+)\}\}/g, (match, varName) => {
+        const trimmedName = varName.trim();
+        return variableValues[trimmedName] !== undefined && variableValues[trimmedName] !== "" 
+          ? variableValues[trimmedName] 
+          : match;
+      });
+
+      try {
+        await axios.post("/api/playground", {
+          promptId: Number(promptId),
+          versionId: currentVersionId,
+          rendered_prompt: newRenderedPrompt,
+          variables_input: variableValues,
+        });
+        toast.success("บันทึกประวัติการทดสอบเรียบร้อยแล้ว");
+      } catch (err) {
+        console.error("Failed to save run history:", err);
+        toast.error("เกิดข้อผิดพลาดในการบันทึกประวัติ");
+      }
+    }
+    setIsRunning(false);
   };
 
   if (!promptId) {
@@ -151,15 +180,15 @@ function PlaygroundContent() {
   return (
     <div className="pb-20 max-w-6xl mx-auto space-y-6 pt-4 fade-in-up">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight mb-2 text-slate-800 dark:text-slate-100" style={{ color: "#ffffff" }}>Prompt Playground</h1>
+        <h1 className="text-3xl font-bold tracking-tight mb-2 text-slate-800" style={{ color: "#000000ff" }}>Prompt Playground</h1>
         <p className="text-muted-foreground">ทดลองกรอกตัวแปรและดูผลลัพธ์ก่อนใช้งานจริง</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-stretch">
         {/* Left Side: Variables */}
-        <Card className="shadow-sm border-slate-800 bg-slate-950 flex flex-col h-full text-slate-100">
+        <Card className="shadow-sm flex flex-col h-full">
           <CardHeader className="pb-4">
-            <CardTitle className="text-base text-slate-100">Variables</CardTitle>
+            <CardTitle className="text-base">Variables</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 pt-2 flex-1 flex flex-col">
             {loading ? (
@@ -169,7 +198,7 @@ function PlaygroundContent() {
                 <Skeleton className="h-32 w-full" />
               </div>
             ) : variables.length === 0 ? (
-              <div className="bg-slate-900/50 border border-slate-800 border-dashed rounded-lg flex items-center justify-center h-40 text-slate-400 text-sm">
+              <div className="bg-muted/50 border border-border border-dashed rounded-lg flex items-center justify-center h-40 text-muted-foreground text-sm">
                 ไม่มีตัวแปรสำหรับ Prompt พิมพ์คำตอบเพื่อใช้งานปกติ
               </div>
             ) : (
@@ -181,14 +210,14 @@ function PlaygroundContent() {
                       {isMultiline ? (
                         <Textarea
                           placeholder={v.name}
-                          className="min-h-[200px] resize-y bg-slate-900 border-slate-800 text-slate-100 placeholder:text-slate-500 focus-visible:ring-indigo-500"
+                          className="min-h-[200px] resize-y bg-background focus-visible:ring-primary"
                           value={variableValues[v.name] || ""}
                           onChange={(e) => setVariableValues(prev => ({ ...prev, [v.name]: e.target.value }))}
                         />
                       ) : (
                         <Input
                           placeholder={v.name}
-                          className="h-11 bg-slate-900 border-slate-800 text-slate-100 placeholder:text-slate-500 focus-visible:ring-indigo-500"
+                          className="h-11 bg-background focus-visible:ring-primary"
                           value={variableValues[v.name] || ""}
                           onChange={(e) => setVariableValues(prev => ({ ...prev, [v.name]: e.target.value }))}
                         />
@@ -200,23 +229,28 @@ function PlaygroundContent() {
             )}
 
             <div className="pt-4 mt-auto">
-              <Button className="w-full text-md font-semibold h-12 bg-indigo-600 hover:bg-indigo-500 text-white" size="lg" onClick={handleRunPrompt}>
-                Run Prompt
+              <Button 
+                className="w-full text-md font-semibold h-12" 
+                size="lg" 
+                onClick={handleRunPrompt}
+                disabled={isRunning}
+              >
+                {isRunning ? "Running..." : "Run Prompt"}
               </Button>
             </div>
           </CardContent>
         </Card>
 
         {/* Right Side: Rendered Prompt */}
-        <Card className="shadow-sm border-slate-800 bg-slate-950 flex flex-col h-full min-h-[500px] text-slate-100">
+        <Card className="shadow-sm flex flex-col h-full min-h-[500px]">
           <CardHeader className="pb-4">
             <div className="flex flex-row items-center justify-between w-full relative">
-               <CardTitle className="text-base text-slate-100">Rendered Prompt</CardTitle>
+               <CardTitle className="text-base">Rendered Prompt</CardTitle>
                
                <Button
                  variant="ghost"
                  size="icon"
-                 className="absolute -top-1 -right-2 h-8 w-8 text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+                 className="absolute -top-1 -right-2 h-8 w-8 text-muted-foreground transition-colors"
                  onClick={handleCopy}
                  title="Copy Rendered Prompt"
                >
@@ -233,8 +267,8 @@ function PlaygroundContent() {
                   <Skeleton className="h-4 w-3/4 mb-3" />
                </div>
             ) : (
-               <div className="absolute inset-x-4 top-0 bottom-4 overflow-auto rounded-lg bg-slate-900 border border-slate-800 px-4 py-4 text-sm whitespace-pre-wrap leading-relaxed text-slate-100">
-                 {renderedPrompt || <span className="text-slate-500 italic font-mono text-xs">final prompt preview...</span>}
+               <div className="absolute inset-x-4 top-0 bottom-4 overflow-auto rounded-lg bg-muted/50 border px-4 py-4 text-sm whitespace-pre-wrap leading-relaxed">
+                 {renderedPrompt || <span className="text-muted-foreground italic font-mono text-xs">final prompt preview...</span>}
                </div>
             )}
           </CardContent>
@@ -244,6 +278,10 @@ function PlaygroundContent() {
   );
 }
 
+/**
+ * หน้า Playground
+ * โค้ดส่วนหลักหุ้มด้วย Suspense เพื่อรองรับการอ่านค่าจาก searchParams
+ */
 export default function PlaygroundPage() {
   return (
     <Suspense fallback={<div className="flex justify-center p-10"><Skeleton className="h-10 w-48" /></div>}>

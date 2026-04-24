@@ -88,7 +88,7 @@ function LoginForm() {
       <CardContent className="space-y-4">
         {/* แจ้งเตือนสีเขียว: แสดงเฉพาะเมื่อมี ?registered=true */}
         {registered && (
-          <div className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-700 dark:bg-green-900/20 dark:text-green-400">
+          <div className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-700">
             สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ
           </div>
         )}

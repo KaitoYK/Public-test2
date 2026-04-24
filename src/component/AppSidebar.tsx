@@ -61,7 +61,7 @@ export function AppSidebar({ user }: { user: { email?: string | null; name?: str
       {/* Navigation */}
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>เมนูหลัก</SidebarGroupLabel>
+          <SidebarGroupLabel>Main Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {

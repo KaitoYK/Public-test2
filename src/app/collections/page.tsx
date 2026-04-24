@@ -121,6 +121,10 @@ function CollectionCard({
   );
 }
 
+/**
+ * หน้าแสดงรายการ Collections ทั้งหมด
+ * สำหรับผู้ดูแลระบบสามารถสร้าง แก้ไข หรือลบ Collection ได้
+ */
 export default function CollectionsPage() {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === "ADMIN" || session?.user?.role === "EDITOR";

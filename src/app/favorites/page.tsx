@@ -177,6 +177,10 @@ function CardSkeleton() {
 }
 
 /* ─── Main Page ──────────────────────────────────────────── */
+/**
+ * หน้าแสดงรายการ Prompts ที่ผู้ใช้กดถูกใจ (Favorites) ไว้
+ * มีช่องค้นหาสำหรับกรอง Prompts ตามชื่อ รายละเอียด หมวดหมู่ หรือแท็ก
+ */
 export default function FavoritesPage() {
   const { favoriteID, loading: favLoading, toggleFavorite } = useFavorites();
   const [favorites, setFavorites] = useState<FavoritePrompt[]>([]);

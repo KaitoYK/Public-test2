@@ -45,6 +45,10 @@ type VariableConfig = {
   description: string;
 };
 
+/**
+ * หน้าแก้ไขข้อมูล Prompt
+ * โหลดข้อมูล Prompt ตาม `params.id` เพื่อนำมาแก้ไข และสร้าง Version ใหม่เมื่อบันทึก
+ */
 export default function EditPromptPage() {
   const { id } = useParams();
   const router = useRouter();

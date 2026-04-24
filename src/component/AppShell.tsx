@@ -40,17 +40,17 @@ function ProtectedShell({ children }: { children: React.ReactNode }) {
   return (
     <SidebarProvider>
       {/* ─── Full-width sticky header ─── */}
-      <header className="fixed top-0 left-0 right-0 z-30 flex h-14 shrink-0 items-center justify-between border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4">
+      <header className="fixed top-0 left-0 right-0 z-30 flex h-14 shrink-0 items-center justify-between border-b border-primary/20 bg-primary px-4 text-primary-foreground shadow-sm">
         <div className="flex items-center gap-2">
-          <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
-          <div className="h-5 w-px bg-border hidden sm:block" />
-          <span className="text-sm font-medium text-muted-foreground hidden sm:inline-block">
-            Prompt Management System
-          </span>
+          <SidebarTrigger className="text-primary-foreground/80 hover:text-primary-foreground" />
+          <div className="h-5 w-px bg-primary-foreground/20 hidden sm:block" />
+          <div className="flex items-center gap-2">
+            <span className="text-lg font-bold tracking-tight">SOFT DE'BUT</span>
+          </div>
         </div>
         <div className="flex items-center gap-3">
-          <span className="text-sm text-muted-foreground hidden sm:inline-block">
-            {session.user.email}
+          <span className="text-sm font-medium hidden sm:inline-block">
+            {session.user.name || session.user.email}
           </span>
           <HeaderActions />
         </div>

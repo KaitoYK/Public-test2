@@ -37,6 +37,10 @@ type ApiResponse = {
   };
 };
 
+/**
+ * หน้าแสดงรายการ Prompts ทั้งหมด
+ * รองรับการกรองตามหมวดหมู่ (Category), สถานะ (Status), โมเดล (Model), แท็ก (Tag) และช่องค้นหา (Search)
+ */
 export default function PromptsList() {
   const [prompts, setPrompts] = useState<Prompt[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);

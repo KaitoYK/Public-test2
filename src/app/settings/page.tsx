@@ -31,6 +31,10 @@ type AppUser = {
   role: string;
 };
 
+/**
+ * หน้าการตั้งค่า (Settings) สำหรับผู้ดูแลระบบ (ADMIN)
+ * ใช้จัดการหมวดหมู่ (Categories), ป้ายกำกับ (Tags), และผู้ใช้งาน (Users)
+ */
 export default function SettingsPage() {
   const { data: session, status } = useSession();
   const router = useRouter();

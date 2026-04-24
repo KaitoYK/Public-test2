@@ -42,7 +42,12 @@ type PromptDetail = {
   recommended_model: string | null;
 };
 
+/**
+ * หน้าแสดงรายละเอียด Prompt
+ * ดึงข้อมูล Prompt และ Versions ต่างๆ ตามรหัสที่ส่งมาในพารามิเตอร์ `params.id`
+ */
 export default function PromptDetailPage() {
+  // ดึงพารามิเตอร์ id จาก URL
   const { id } = useParams();
   const router = useRouter();
 
@@ -185,7 +190,7 @@ export default function PromptDetailPage() {
         </div>
         <div className="flex gap-3 shrink-0">
           <Button variant="outline" size="sm" onClick={() => toggleFavorite(prompt.id)}
-            style={{ backgroundColor: isFavorite(prompt.id) ? 'orange' : '', color: 'white' }}>
+            style={{ backgroundColor: isFavorite(prompt.id) ? 'orange' : '', color: 'black' }}>
             {isFavorite(prompt.id) ? <FaHeart /> : <FaRegHeart />}
             {isFavorite(prompt.id) ? "Unfavorite" : "Favorite"}
           </Button>

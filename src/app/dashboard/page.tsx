@@ -42,6 +42,10 @@ type DashboardStats = {
   totalTags: number;
 };
 
+/**
+ * หน้า Dashboard 
+ * แสดงสถิติและภาพรวมการทำงานของระบบ ไวรัล หรือจำนวน Prompts ในสถานะต่างๆ
+ */
 export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -111,7 +115,7 @@ export default function DashboardPage() {
               <CheckCircle2 className="h-4 w-4 text-green-500" />
             </CardHeader>
             <CardContent>
-              {loading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-bold text-green-600 dark:text-green-400">{stats?.byStatus.PUBLISHED || 0}</div>}
+              {loading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-bold text-green-600">{stats?.byStatus.PUBLISHED || 0}</div>}
               <p className="text-xs text-muted-foreground mt-1">ที่เปิดใช้งานอยู่</p>
             </CardContent>
           </Card>
@@ -122,7 +126,7 @@ export default function DashboardPage() {
               <AlertCircle className="h-4 w-4 text-yellow-500" />
             </CardHeader>
             <CardContent>
-              {loading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-bold text-yellow-600 dark:text-yellow-400">{stats?.byStatus.DRAFT || 0}</div>}
+              {loading ? <Skeleton className="h-8 w-16" /> : <div className="text-3xl font-bold text-yellow-600">{stats?.byStatus.DRAFT || 0}</div>}
               <p className="text-xs text-muted-foreground mt-1">รอการตรวจสอบ</p>
             </CardContent>
           </Card>

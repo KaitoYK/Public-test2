@@ -1,10 +1,13 @@
 "use client";
 
 import { LogOut } from "lucide-react";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { Button } from "@/component/ui/button";
 
 export function HeaderActions() {
+
+  const { data: session } = useSession();
+  
   return (
     <Button 
       variant="ghost" 
